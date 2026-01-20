@@ -69,9 +69,42 @@ docker push $DOCKER_USER/hasher:v1
 docker push $DOCKER_USER/worker:v1
 docker push $DOCKER_USER/webui:v1
 ```
-## After delpoyment local webui should look like this:
-`minikube service webui`
-<img width="829" height="611" alt="image" src="https://github.com/user-attachments/assets/392ce2ff-228a-4fdc-852a-8623196c4ece" />
+## Create Deployments
+
+```bash
+kubectl create deployment redis --image=redis
+kubectl create deployment rng --image=$DOCKER_USER/rng:v1
+kubectl create deployment hasher --image=$DOCKER_USER/hasher:v1
+kubectl create deployment worker --image=$DOCKER_USER/worker:v1
+kubectl create deployment webui --image=$DOCKER_USER/webui:v1
+```
+
+Verify pods are running:
+
+```bash
+kubectl get pods
+```
+
+Wait until all pods show `Running` status.
+
+## Create Services
+
+```bash
+kubectl expose deployment redis --port 6379
+kubectl expose deployment rng --port 80
+kubectl expose deployment hasher --port 80
+kubectl expose deployment webui --type=NodePort --port=80
+```
+
+## Open Web UI
+
+```bash
+minikube service webui
+```
+
+Your app will be automatically opened in a web browser:
+
+<img width="1543" height="807" alt="image" src="https://github.com/user-attachments/assets/d96f5292-e82b-48d0-8816-5f6f6f179c6e" />
 
 
 ## Cleanup
