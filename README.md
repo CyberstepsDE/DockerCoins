@@ -69,6 +69,10 @@ docker push $DOCKER_USER/hasher:v1
 docker push $DOCKER_USER/worker:v1
 docker push $DOCKER_USER/webui:v1
 ```
+## After delpoyment local webui should look like this:
+`minikube service webui`
+<img width="829" height="611" alt="image" src="https://github.com/user-attachments/assets/392ce2ff-228a-4fdc-852a-8623196c4ece" />
+
 
 ## Cleanup
 
