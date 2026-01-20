@@ -1,32 +1,124 @@
 <!doctype html>
 <html>
   <head>
-    <title>DockerCoin Miner WebUI</title>
+    <title>DockerCoin Miner</title>
     <link rel="stylesheet" type="text/css" href="rickshaw.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
     <style>
-      #graph {
-        background-color: #eee;
-        width: 800px;
-        height: 400px;
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%);
+        min-height: 100vh;
+        font-family: 'Roboto', sans-serif;
+        color: #e0e0e0;
+        padding: 20px;
       }
-      #tweet {
-        color: royalblue;
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .header h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 2.5rem;
+        background: linear-gradient(90deg, #00d4ff, #00ff88);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+      }
+      .header .subtitle {
+        color: #888;
+        margin-top: 5px;
+        font-size: 0.9rem;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+      .stat-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        backdrop-filter: blur(10px);
+      }
+      .stat-card .label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+        letter-spacing: 1px;
+      }
+      .stat-card .value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.8rem;
+        color: #00d4ff;
+        margin-top: 5px;
+      }
+      .stat-card.highlight .value {
+        color: #00ff88;
+        text-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+      }
+      .graph-container {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+      }
+      .graph-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #888;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+      }
+      #graph {
+        background: transparent;
+        width: 100%;
+        height: 300px;
+      }
+      #graph svg { width: 100%; }
+      .rickshaw_graph .y_ticks text { fill: #666; }
+      .footer {
+        text-align: center;
+        padding: 15px;
+        color: #555;
+        font-size: 0.8rem;
+      }
+      .footer a {
+        color: #00d4ff;
+        text-decoration: none;
+      }
+      .footer a:hover { text-decoration: underline; }
+      .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #00ff88;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; box-shadow: 0 0 10px #00ff88; }
+        50% { opacity: 0.5; box-shadow: 0 0 5px #00ff88; }
       }
     </style>
     <script src="jquery.js"></script>
     <script src="d3.min.js"></script>
     <script src="rickshaw.min.js"></script>
     <script>
-      String.prototype.format = function () {
-        var args = arguments;
-        return this.replace(/\{(\d+)\}/g, function (m, n) {
-          return args[n];
-        });
-      };
-
       var series = [];
       var points = [];
       var graph = null;
+      var totalCoins = 0;
 
       function refresh() {
         $.ajax({ url: "json" }).done(function (data) {
@@ -36,39 +128,28 @@
             data.now -= 1;
             series.unshift(data);
           }
-          while (series.length > 250) {
-            series.shift();
-          }
-          while (points.length > 0) {
-            points.pop();
-          }
+          while (series.length > 250) { series.shift(); }
+          while (points.length > 0) { points.pop(); }
           var speed;
           for (var i = 0; i < series.length - 1; i++) {
-            // Compute instantaneous speed
             var s1 = series[i];
             var s2 = series[i + 1];
             speed = (s2.hashes - s1.hashes) / (s2.now - s1.now);
             points.push({ x: s2.now, y: speed });
           }
-          $("#speed").text("~" + speed.toFixed(1) + " hashes/second");
-          var msg =
-            "I'm attending a @docker orchestration workshop, " +
-            "and my #DockerCoins mining rig is crunching " +
-            speed.toFixed(1) +
-            " hashes/second! W00T!";
-          $("#tweet").attr(
-            "href",
-            "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msg),
-          );
+          totalCoins = data.coins || 0;
+          $("#speed").text(speed.toFixed(1));
+          $("#coins").text(totalCoins.toLocaleString());
+          $("#hashes").text(parseInt(data.hashes || 0).toLocaleString());
           if (graph == null) {
             graph = new Rickshaw.Graph({
               renderer: "area",
               stroke: true,
-              width: 800,
-              height: 400,
+              width: 850,
+              height: 300,
               element: $("#graph")[0],
               preserve: true,
-              series: [{ name: "Coins", color: "steelblue", data: points }],
+              series: [{ name: "Speed", color: "#00d4ff", data: points }],
             });
             graph.render();
             var yAxis = new Rickshaw.Graph.Axis.Y({
@@ -79,30 +160,41 @@
             yAxis.render();
           } else {
             graph.update();
-            $("text").css({
-              "font-size": "15px",
-              "font-weight": "normal",
-              opacity: 0.5,
-            });
           }
         });
       }
-
-      $(function () {
-        setInterval(refresh, 1000);
-      });
+      $(function () { setInterval(refresh, 1000); });
     </script>
   </head>
   <body>
-    <h1>DockerCoin Miner - YOUR_NAME</h1>
-
-    <div id="graph"></div>
-
-    <h2>
-      Current mining speed:
-      <span id="speed">-</span>
-      <a id="tweet" href="#">(Tweet this!)</a>
-    </h2>
+    <div class="container">
+      <div class="header">
+        <h1>DockerCoin Miner</h1>
+        <p class="subtitle"><span class="status-dot"></span>YOUR_NAME's Mining Rig</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card highlight">
+          <div class="label">Mining Speed</div>
+          <div class="value"><span id="speed">-</span> <small>H/s</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Coins</div>
+          <div class="value" id="coins">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Hashes</div>
+          <div class="value" id="hashes">0</div>
+        </div>
+      </div>
+      <div class="graph-container">
+        <div class="graph-title">Mining Performance (hashes/second)</div>
+        <div id="graph"></div>
+      </div>
+      <div class="footer">
+        Powered by <a href="https://kubernetes.io" target="_blank">Kubernetes</a> |
+        Cybersecurity Lab Exercise
+      </div>
+    </div>
   </body>
 </html>
 
