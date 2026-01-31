@@ -30,7 +30,7 @@ DockerCoins is an educational application that simulates cryptocurrency mining. 
                     └──────────┘
 ```
 
-See full walk through in [[LAB.md]]
+See full walkthrough in [LAB.md]
 
 ## Before You Start
 
